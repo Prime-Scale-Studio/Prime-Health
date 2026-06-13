@@ -5,7 +5,7 @@
  */
 
 const GEMINI_EMBEDDING_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent'
+  'https://generativelanguage.googleapis.com/v1/models/text-embedding-004:embedContent'
 
 interface GeminiEmbeddingResponse {
   embedding: {

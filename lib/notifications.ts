@@ -72,7 +72,10 @@ function readableDate(dateStr: string): string {
 }
 
 function readableTime(timeStr: string): string {
-  const parsed = parse(timeStr, "HH:mm", new Date())
+  // Supabase time columns are stored as "HH:mm:ss"
+  // Trim to "HH:mm" to guarantee parse works regardless of format
+  const normalized = timeStr.slice(0, 5)
+  const parsed = parse(normalized, "HH:mm", new Date())
   return format(parsed, "h:mm a")
 }
 
@@ -82,8 +85,11 @@ function googleCalendarUrl(
 ): string {
   // Format: 20260512T103000Z
   const dateStr  = appointment.appointment_date.replace(/-/g, "")
-  const startStr = appointment.start_time.replace(":", "") + "00"
-  const endStr   = appointment.end_time.replace(":", "") + "00"
+  // Use replaceAll or regex to strip ALL colons (HH:mm:ss → HHmmss → HHmm00)
+  const startNorm = appointment.start_time.slice(0, 5).replace(":", "")
+  const endNorm   = appointment.end_time.slice(0, 5).replace(":", "")
+  const startStr  = startNorm + "00"
+  const endStr    = endNorm + "00"
   const start    = `${dateStr}T${startStr}`
   const end      = `${dateStr}T${endStr}`
   const text     = encodeURIComponent(`Appointment at ${clinic.name}`)
