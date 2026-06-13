@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(Remove-Item -Recurse -Force \"d:\\\\Prime_Scale_Studio\\\\PRIME_HEALTH\\\\app\\\\\\(app\\)\\\\app\")"
+    ]
+  }
+}
