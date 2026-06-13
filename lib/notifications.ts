@@ -9,9 +9,53 @@
  *   - Log notification results to the notification_logs table
  */
 
-import { Resend } from "resend"
 import twilio from "twilio"
+import nodemailer from "nodemailer"
 import { format, parse } from "date-fns"
+
+// Provider-agnostic email sender
+// Swap provider here without touching any other file
+async function sendEmail({
+  to,
+  subject,
+  html,
+}: {
+  to: string
+  subject: string
+  html: string
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (process.env.EMAIL_PROVIDER === 'gmail') {
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.GMAIL_USER,
+          pass: process.env.GMAIL_APP_PASSWORD,
+        },
+      })
+
+      await transporter.sendMail({
+        from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_FROM}>`,
+        to,
+        subject,
+        html,
+      })
+
+      return { success: true }
+    }
+
+    // Future: add resend provider here
+    // if (process.env.EMAIL_PROVIDER === 'resend') { ... }
+
+    return { success: false, error: 'No email provider configured' }
+  } catch (error) {
+    console.error('[notifications] email send failed:', error)
+    return { 
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    }
+  }
+}
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getBaseUrl } from "@/lib/utils"
 import type { Tables } from "@/types/supabase"
@@ -19,11 +63,6 @@ import type { Tables } from "@/types/supabase"
 // ─────────────────────────────────────────────
 // Clients (lazy init — only validate keys at call-time, not module load)
 // ─────────────────────────────────────────────
-
-function getResend(): Resend {
-  if (!process.env.RESEND_API_KEY) throw new Error("Missing RESEND_API_KEY")
-  return new Resend(process.env.RESEND_API_KEY)
-}
 
 function getTwilioClient(): ReturnType<typeof twilio> {
   const sid = process.env.TWILIO_ACCOUNT_SID
@@ -355,7 +394,6 @@ export async function sendConfirmationEmail(
   console.error('Doctor email → ', doctorEmail)
 
   try {
-    const resend = getResend()
     const from = process.env.NEXT_PUBLIC_EMAIL_FROM || 'onboarding@resend.dev'
 
     // Formatters
@@ -382,18 +420,17 @@ export async function sendConfirmationEmail(
     try {
       if (patientEmail) {
         console.error('Sending patient email...')
-        const { data, error } = await resend.emails.send({
-          from,
+        const { success, error } = await sendEmail({
           to: patientEmail,
           subject: `${isDev ? '[TEST] ' : ''}Appointment Confirmed - ${clinic.name}`,
           html: buildPatientEmailHtml(payload, formattedDate, formattedTime)
         })
-        if (error) {
+        if (error || !success) {
           console.error('❌ Patient email failed:', error)
-          errorMessage += `Patient: ${error.message}. `
-          await logNotification(clinic.id, appointment.id, 'email', patientEmail, 'failed', error.message)
+          errorMessage += `Patient: ${error}. `
+          await logNotification(clinic.id, appointment.id, 'email', patientEmail, 'failed', error || 'Unknown error')
         } else {
-          console.error('✅ Patient email sent:', data?.id)
+          console.error('✅ Patient email sent')
           patientSucceeded = true
           await logNotification(clinic.id, appointment.id, 'email', patientEmail, 'sent', null)
         }
@@ -410,18 +447,17 @@ export async function sendConfirmationEmail(
     try {
       if (doctorEmail) {
         console.error('Sending doctor email...')
-        const { data, error } = await resend.emails.send({
-          from,
+        const { success, error } = await sendEmail({
           to: doctorEmail,
           subject: `${isDev ? '[TEST] ' : ''}New Booking - ${appointment.patient_name}`,
           html: buildDoctorEmailHtml(payload, formattedDate, formattedTime)
         })
-        if (error) {
+        if (error || !success) {
           console.error('❌ Doctor email failed:', error)
-          errorMessage += `Doctor: ${error.message}. `
-          await logNotification(clinic.id, appointment.id, 'email', doctorEmail, 'failed', error.message)
+          errorMessage += `Doctor: ${error}. `
+          await logNotification(clinic.id, appointment.id, 'email', doctorEmail, 'failed', error || 'Unknown error')
         } else {
-          console.error('✅ Doctor email sent:', data?.id)
+          console.error('✅ Doctor email sent')
           doctorSucceeded = true
           await logNotification(clinic.id, appointment.id, 'email', doctorEmail, 'sent', null)
         }

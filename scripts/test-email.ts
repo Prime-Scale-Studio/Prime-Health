@@ -1,53 +1,45 @@
 import { config } from 'dotenv'
 import { resolve } from 'path'
+import nodemailer from 'nodemailer'
 
 // Load .env.local manually
 config({ path: resolve(process.cwd(), '.env.local') })
 
-import { Resend } from 'resend'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 async function testEmail() {
-  console.info('🧪 Testing Resend Email...')
-  console.info('API Key exists:', !!process.env.RESEND_API_KEY)
-  console.info('From:', process.env.NEXT_PUBLIC_EMAIL_FROM || 'onboarding@resend.dev')
-  console.info('To:', process.env.RESEND_DEV_EMAIL)
+  console.info('🧪 Testing Gmail SMTP...')
+  console.info('Provider:', process.env.EMAIL_PROVIDER)
+  console.info('From:', process.env.EMAIL_FROM)
+  console.info('To:', process.env.RESEND_DEV_EMAIL || process.env.EMAIL_FROM)
   console.info('---')
 
-  if (!process.env.RESEND_API_KEY) {
-    console.error('❌ RESEND_API_KEY is missing in .env.local')
-    return
-  }
-
-  if (!process.env.RESEND_DEV_EMAIL) {
-    console.error('❌ RESEND_DEV_EMAIL is missing in .env.local')
+  if (process.env.EMAIL_PROVIDER !== 'gmail') {
+    console.error('❌ EMAIL_PROVIDER is not gmail')
     return
   }
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: 'onboarding@resend.dev',
-      to: [process.env.RESEND_DEV_EMAIL],
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
+      },
+    })
+
+    const info = await transporter.sendMail({
+      from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_FROM}>`,
+      to: process.env.RESEND_DEV_EMAIL || process.env.EMAIL_FROM,
       subject: 'Prime Health - Test Email',
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
           <h1 style="color: #0071E3;">✅ Email is Working!</h1>
-          <p>If you're reading this, your Resend configuration is correct.</p>
-          <p>From: onboarding@resend.dev</p>
-          <p>API Key: ${process.env.RESEND_API_KEY?.slice(0, 10)}...</p>
+          <p>If you're reading this, your Gmail SMTP configuration is correct.</p>
         </div>
       `,
     })
 
-    if (error) {
-      console.error('❌ Resend Error:', JSON.stringify(error, null, 2))
-      return
-    }
-
     console.info('✅ Email sent successfully!')
-    console.info('Email ID:', data?.id)
-    console.info('\nCheck your inbox:', process.env.RESEND_DEV_EMAIL)
+    console.info('Message ID:', info.messageId)
   } catch (err: any) {
     console.error('❌ Exception:', err.message)
     console.error('Full error:', err)
