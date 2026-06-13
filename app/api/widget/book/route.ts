@@ -151,11 +151,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (clinic) {
       const payload = { appointment, clinic, patient, service }
 
-      // Send notifications in parallel (don't block response)
-      // Note: We don't await so the patient gets instant confirmation, 
-      // but the logNotification inside these functions will still fire.
-      sendConfirmationEmail(payload)
-      sendWhatsAppNotification(payload)
+      // Await notifications so the serverless function does not terminate
+      // before they are fully sent.
+      try {
+        await Promise.allSettled([
+          sendConfirmationEmail(payload),
+          sendWhatsAppNotification(payload)
+        ])
+      } catch (emailErr) {
+        console.error("[WidgetBook] Notification dispatch failed:", emailErr)
+      }
     }
 
     // 7. Return confirmation
