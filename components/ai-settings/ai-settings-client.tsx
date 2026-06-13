@@ -9,6 +9,9 @@ import { RAGDocumentManager } from "@/components/ai/RAGDocumentManager";
 import { toast } from "sonner";
 import { updateWidgetSettings } from "@/actions/clinic";
 import type { Tables } from "@/types/supabase";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ExternalLink } from "lucide-react";
 
 type RagDocument = Tables<"rag_documents">;
 
@@ -51,12 +54,20 @@ export function AiSettingsClient({
             Customize your widget's appearance, set your AI's tone, and train its knowledge base.
           </p>
         </div>
-        <div className="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2">
-          <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
-          </span>
-          Active widget sessions: {activeSessions}
+        <div className="flex items-center gap-3">
+          <div className="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+            </span>
+            Active widget sessions: {activeSessions}
+          </div>
+          <Link href={`/test-embed?clinicId=${clinic.id}`}>
+            <Button className="rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30">
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Test Live Embed
+            </Button>
+          </Link>
         </div>
       </div>
 

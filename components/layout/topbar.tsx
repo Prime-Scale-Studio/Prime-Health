@@ -44,16 +44,16 @@ import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Calendar", href: "/app/calendar", icon: Calendar },
+  { label: "Calendar", href: "/calendar", icon: Calendar },
   { label: "Appointments", href: "/appointments", icon: CalendarCheck2 },
   { label: "Patients", href: "/patients", icon: Users },
   { label: "Services", href: "/services", icon: Stethoscope },
 ];
 
 const SECONDARY_NAV = [
-  { label: "Settings", href: "/app/settings", icon: Settings },
-  { label: "AI Settings", href: "/app/ai-settings", icon: MessageSquare },
-  { label: "Analytics", href: "/app/analytics", icon: BarChart3 },
+  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "AI Settings", href: "/ai-settings", icon: MessageSquare },
+  { label: "Analytics", href: "/analytics", icon: BarChart3 },
 ];
 
 export default function Topbar() {
@@ -209,11 +209,11 @@ export default function Topbar() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Account Settings</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <Link href="/app/settings">
+            <Link href="/settings">
               <DropdownMenuItem icon={<User />}>My Profile</DropdownMenuItem>
             </Link>
             <DropdownMenuItem icon={<ShieldCheck />}>Privacy Settings</DropdownMenuItem>
-            <Link href="/app/settings">
+            <Link href="/settings">
               <DropdownMenuItem icon={<Settings />}>Clinic Settings</DropdownMenuItem>
             </Link>
             <DropdownMenuSeparator />
