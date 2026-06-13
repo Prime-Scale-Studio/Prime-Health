@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 
+import { getBaseUrl } from "@/lib/utils";
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
@@ -11,9 +13,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL ?? "https://primehealth.app"
-  ),
+  metadataBase: new URL(getBaseUrl()),
   title: {
     default: "Prime Health — AI‑Powered Clinic Management",
     template: "%s | Prime Health",

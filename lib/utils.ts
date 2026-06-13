@@ -80,8 +80,16 @@ export function calculateEndTime(startTime: string, durationMinutes: number): st
 // ─────────────────────────────────────────────
 export function getBaseUrl(): string {
   if (typeof window !== "undefined") return window.location.origin
-  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
-  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL
-  return "http://localhost:3000"
+  
+  let url = process.env.NEXT_PUBLIC_APP_URL || 
+            (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "") || 
+            (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") || 
+            "http://localhost:3000"
+
+  url = url.trim()
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    url = `https://${url}`
+  }
+  
+  return url
 }
