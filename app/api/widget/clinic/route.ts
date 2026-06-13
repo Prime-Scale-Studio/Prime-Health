@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const supabase = createAdminClient();
 
     const { data: clinic, error } = await supabase
-      .from("clinics")
+      .from("clinic_public")
       .select("id, name, doctor_name, widget_theme_color")
       .eq("id", clinicId)
       .single();

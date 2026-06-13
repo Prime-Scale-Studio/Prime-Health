@@ -1,6 +1,7 @@
 import React from "react";
 import { WidgetChatClient } from "./widget-chat-client";
 import { Metadata } from "next";
+import { getBaseUrl } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Book Appointment",
@@ -29,12 +30,8 @@ export default async function WidgetPage(props: {
   // Use public API instead of server client
   let clinic = null;
   try {
-    // In server components, fetch needs absolute URLs if hitting our own API,
-    // or we can just use the public admin client directly here since it's a server component.
-    // However, the prompt specifically asked NOT to use createClient from server.ts
-    // Let's use fetch with a relative URL trick or use NEXT_PUBLIC_APP_URL.
-    // Given Next.js app router, fetching absolute URL is safest.
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    // In server components, fetch needs absolute URLs if hitting our own API
+    const baseUrl = getBaseUrl();
     const res = await fetch(`${baseUrl}/api/widget/clinic?clinicId=${clinicId}`, { cache: 'no-store' });
     if (res.ok) {
       clinic = await res.json();
