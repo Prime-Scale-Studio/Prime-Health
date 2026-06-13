@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { sendConfirmationEmail, sendWhatsAppNotification } from "@/lib/notifications"
+import { sendConfirmationEmail, sendCancellationEmail, sendWhatsAppNotification } from "@/lib/notifications"
 import type { ApiResponse } from "@/types/index"
 import type { Database, Tables, TablesInsert } from "@/types/supabase"
 import { format } from "date-fns"
@@ -172,11 +172,11 @@ export async function updateAppointmentStatus(
   status: Database["public"]["Enums"]["appointment_status"]
 ): Promise<ApiResponse<AppointmentRow>> {
   try {
-    const supabase = await createClient()
     const adminSupabase = createAdminClient()
     const clinicId = await getClinicId()
     if (!clinicId) return { data: null, error: "Unauthorized" }
 
+    // ── STEP 1: DB update FIRST — emails only after this succeeds ──
     const { data: appointment, error } = await adminSupabase
       .from("appointments")
       .update({ status })
@@ -187,19 +187,45 @@ export async function updateAppointmentStatus(
 
     if (error || !appointment) return { data: null, error: error?.message ?? "Failed to update" }
 
-    // ── Notifications ─────────────────────────────────────────
-    // If status changed to confirmed, send confirmation email
-    if (status === "confirmed" && appointment.patient_id && appointment.service_id) {
-      const [{ data: clinic }, { data: patient }, { data: service }] = await Promise.all([
-        adminSupabase.from("clinics").select("*").eq("id", clinicId).single(),
-        adminSupabase.from("patients").select("*").eq("id", appointment.patient_id).single(),
-        adminSupabase.from("services").select("*").eq("id", appointment.service_id).single(),
-      ])
+    // ── STEP 2: Fetch related data for notification payload ────────
+    if (!appointment.patient_id || !appointment.service_id) {
+      return { data: appointment, error: null }
+    }
 
-      if (clinic && patient && service) {
-        const payload = { appointment, clinic, patient, service }
+    const [{ data: clinic }, { data: patient }, { data: service }] = await Promise.all([
+      adminSupabase.from("clinics").select("*").eq("id", clinicId).single(),
+      adminSupabase.from("patients").select("*").eq("id", appointment.patient_id).single(),
+      adminSupabase.from("services").select("*").eq("id", appointment.service_id).single(),
+    ])
+
+    if (!clinic || !patient || !service) {
+      return { data: appointment, error: null }
+    }
+
+    const payload = { appointment, clinic, patient, service }
+
+    // ── STEP 3: Send emails — each in independent try/catch ────────
+    // One failing must NOT block the other or the status update itself.
+
+    if (status === "confirmed") {
+      try {
         void sendConfirmationEmail(payload)
+      } catch (err) {
+        console.error("[updateAppointmentStatus] sendConfirmationEmail failed:", err)
+      }
+
+      try {
         void sendWhatsAppNotification(payload)
+      } catch (err) {
+        console.error("[updateAppointmentStatus] sendWhatsAppNotification failed:", err)
+      }
+    }
+
+    if (status === "cancelled") {
+      try {
+        void sendCancellationEmail(payload)
+      } catch (err) {
+        console.error("[updateAppointmentStatus] sendCancellationEmail failed:", err)
       }
     }
 

@@ -19,9 +19,8 @@ export async function GET(request: NextRequest) {
 
     const supabase = createAdminClient();
 
-    // Cast to any to bypass TS error since clinic_public view isn't in generated types yet
-    const { data: clinic, error } = await (supabase as any)
-      .from("clinic_public")
+    const { data: clinic, error } = await supabase
+      .from("clinics")
       .select("id, name, doctor_name, widget_theme_color")
       .eq("id", clinicId)
       .single();
