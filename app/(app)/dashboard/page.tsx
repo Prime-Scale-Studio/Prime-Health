@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import { 
   Users, 
   CalendarCheck2, 
@@ -19,12 +19,14 @@ import { format, subDays } from "date-fns";
 import { DashboardRealtimeListener } from "./client-dashboard";
 import type { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
+
 // Lazy load charts
-const AppointmentChart = dynamic(() => import("@/components/dashboard/appointment-chart").then(mod => mod.AppointmentChart), {
+const AppointmentChart = nextDynamic(() => import("@/components/dashboard/appointment-chart").then(mod => mod.AppointmentChart), {
   loading: () => <Skeleton className="h-[300px] w-full rounded-2xl" />,
 });
 
-const StatusDistribution = dynamic(() => import("@/components/dashboard/status-distribution").then(mod => mod.StatusDistribution), {
+const StatusDistribution = nextDynamic(() => import("@/components/dashboard/status-distribution").then(mod => mod.StatusDistribution), {
   loading: () => <Skeleton className="h-[300px] w-full rounded-2xl" />,
 });
 
